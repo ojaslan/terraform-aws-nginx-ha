@@ -177,6 +177,9 @@ jobs:
   # ==================================================
   # DEPLOYMENT TEST
   # ==================================================
+    # ==================================================
+  # DEPLOYMENT TEST
+  # ==================================================
   deployment-test:
     name: Nginx Deployment Test
     needs: terraform-cd
@@ -184,15 +187,12 @@ jobs:
 
     steps:
 
-      # 1. Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # 3. Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -200,21 +200,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # 4. Terraform Init
       - name: Terraform Init
         run: terraform init -input=false
 
-      # 5. Get Server IPs
       - name: Get Server IPs
         run: |
-          terraform output -json public_ips > public_ips.json
-          cat public_ips.json
+          terraform output -json public_ips | jq -r '.[]' > public_ips.txt
 
-      # 6. Test Nginx Servers
+          echo "Server IPs:"
+          cat public_ips.txt
+
       - name: Test Nginx Servers
         shell: bash
         run: |
-          for IP in $(cat public_ips.json | tr -d '[]" ,' | tr '\n' ' '); do
+          while IFS= read -r IP; do
 
             echo "======================================"
             echo "Testing server: $IP"
@@ -226,7 +225,11 @@ jobs:
 
               echo "Attempt $i/12..."
 
-              if curl --fail --connect-timeout 5 --max-time 10 "http://$IP"; then
+              if curl --fail \
+                --connect-timeout 5 \
+                --max-time 10 \
+                "http://$IP"; then
+
                 echo ""
                 echo "Nginx test PASSED for $IP"
                 SUCCESS=true
@@ -243,9 +246,8 @@ jobs:
               exit 1
             fi
 
-          done
+          done < public_ips.txt
 
-      # 7. Final Result
       - name: Deployment Test Passed
         run: |
           echo "======================================"
