@@ -1,0 +1,149 @@
+{
+  "version": 4,
+  "terraform_version": "1.15.8",
+  "serial": 2,
+  "lineage": "68b386e8-ba23-3ca2-d3de-6f1ee4515ebb",
+  "outputs": {
+    "instance_ids": {
+      "value": [
+        "i-080914ea22bd7ed54",
+        "i-027807cae13604b7b",
+        "i-0e1505031b9829e7c",
+        "i-0cab095f237a80846"
+      ],
+      "type": [
+        "tuple",
+        [
+          "string",
+          "string",
+          "string",
+          "string"
+        ]
+      ]
+    },
+    "public_dns": {
+      "value": [
+        "ec2-52-90-148-173.compute-1.amazonaws.com",
+        "ec2-3-80-27-93.compute-1.amazonaws.com",
+        "ec2-3-87-87-34.compute-1.amazonaws.com",
+        "ec2-54-175-132-164.compute-1.amazonaws.com"
+      ],
+      "type": [
+        "tuple",
+        [
+          "string",
+          "string",
+          "string",
+          "string"
+        ]
+      ]
+    },
+    "public_ips": {
+      "value": [
+        "52.90.148.173",
+        "3.80.27.93",
+        "3.87.87.34",
+        "54.175.132.164"
+      ],
+      "type": [
+        "tuple",
+        [
+          "string",
+          "string",
+          "string",
+          "string"
+        ]
+      ]
+    },
+    "security_group_id": {
+      "value": "sg-0e352496fd6244ca5",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "nginx",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:us-east-1:432500707939:security-group/sg-0e352496fd6244ca5",
+            "description": "Security group for Nginx web servers",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-0e352496fd6244ca5",
+            "ingress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "HTTP",
+                "from_port": 80,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 80
+              },
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "SSH",
+                "from_port": 22,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 22
+              }
+            ],
+            "name": "nginx-ha-project-sg",
+            "name_prefix": "",
+            "owner_id": "432500707939",
+            "region": "us-east-1",
+            "revoke_rules_on_delete": false,
+            "tags": {
+              "Name": "nginx-ha-project-sg",
+              "Project": "nginx-ha-project"
+            },
+            "tags_all": {
+              "Name": "nginx-ha-project-sg",
+              "Project": "nginx-ha-project"
+            },
+            "timeouts": null,
+            "vpc_id": "vpc-09b638c630ff256b8"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "account_id": "432500707939",
+            "id": "sg-0e352496fd6244ca5",
+            "region": "us-east-1"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
+
