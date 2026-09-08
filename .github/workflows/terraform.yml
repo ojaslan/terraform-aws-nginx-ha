@@ -1,4 +1,4 @@
-name: Terraform CI
+name: Terraform CI/CD
 
 on:
   push:
@@ -10,8 +10,12 @@ on:
       - main
 
 jobs:
-  terraform:
-    name: Terraform Validation
+
+  # =========================
+  # CI
+  # =========================
+  terraform-ci:
+    name: Terraform CI
     runs-on: ubuntu-latest
 
     env:
@@ -90,3 +94,50 @@ jobs:
       # 9. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -input=false
+
+
+  # =========================
+  # CD
+  # =========================
+  terraform-cd:
+    name: Terraform CD
+    needs: terraform-ci
+    runs-on: ubuntu-latest
+
+    # Manual approval environment
+    environment:
+      name: production
+
+    env:
+      TF_VAR_aws_region: us-east-1
+      TF_VAR_ami_id: ami-01a00762f46d584a1
+
+    steps:
+
+      # 1. Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 3. Configure AWS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # 4. Verify AWS connection
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
+      # 5. Terraform Init
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      # 6. Terraform Apply
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false
