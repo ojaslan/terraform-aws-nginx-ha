@@ -19,12 +19,51 @@ jobs:
       TF_VAR_ami_id: ami-01a00762f46d584a1
 
     steps:
+
+      # 1. Checkout repository
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # 3. Check AWS secrets safely
+      - name: Check AWS Secret Format
+        shell: bash
+        env:
+          CHECK_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          CHECK_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          if [ -z "$CHECK_ACCESS_KEY" ]; then
+            echo "❌ AWS_ACCESS_KEY_ID is EMPTY"
+            exit 1
+          fi
+
+          if [ -z "$CHECK_SECRET_KEY" ]; then
+            echo "❌ AWS_SECRET_ACCESS_KEY is EMPTY"
+            exit 1
+          fi
+
+          echo "✅ AWS_ACCESS_KEY_ID is present"
+          echo "Access key length: ${#CHECK_ACCESS_KEY}"
+
+          echo "✅ AWS_SECRET_ACCESS_KEY is present"
+          echo "Secret key length: ${#CHECK_SECRET_KEY}"
+
+          if [[ "$CHECK_ACCESS_KEY" == *"/"* ]]; then
+            echo "❌ ACCESS KEY contains '/'"
+            exit 1
+          fi
+
+          if [[ "$CHECK_ACCESS_KEY" == *" "* ]]; then
+            echo "❌ ACCESS KEY contains spaces"
+            exit 1
+          fi
+
+          echo "✅ Access key format looks valid"
+
+      # 4. Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -32,17 +71,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 5. Verify AWS connection
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
+      # 6. Terraform format check
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
+      # 7. Terraform Init
       - name: Terraform Init
         run: terraform init -input=false
 
+      # 8. Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
+      # 9. Terraform Plan
       - name: Terraform Plan
         run: terraform plan -input=false
