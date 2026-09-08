@@ -9,11 +9,12 @@ on:
     branches:
       - main
 
+
 jobs:
 
-  # =========================
+  # ==================================================
   # BUILD
-  # =========================
+  # ==================================================
   build:
     name: Terraform Build
     runs-on: ubuntu-latest
@@ -26,16 +27,20 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # S3 backend ko Build stage mein access nahi karna
       - name: Terraform Init
-        run: terraform init -input=false
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
 
       - name: Terraform Configuration Check
         run: terraform version
 
 
-  # =========================
+  # ==================================================
   # TEST / CI
-  # =========================
+  # ==================================================
   terraform-ci:
     name: Terraform CI
     needs: build
@@ -47,7 +52,7 @@ jobs:
 
     steps:
 
-      # 1. Checkout repository
+      # 1. Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -98,11 +103,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # 5. Verify AWS connection
+      # 5. Verify AWS
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
-      # 6. Terraform Format Check
+      # 6. Terraform Format
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
@@ -119,9 +124,9 @@ jobs:
         run: terraform plan -input=false
 
 
-  # =========================
+  # ==================================================
   # DEPLOY / CD
-  # =========================
+  # ==================================================
   terraform-cd:
     name: Terraform CD
     needs: terraform-ci
@@ -136,7 +141,7 @@ jobs:
 
     steps:
 
-      # 1. Checkout repository
+      # 1. Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -152,7 +157,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # 4. Verify AWS connection
+      # 4. Verify AWS
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
@@ -169,9 +174,9 @@ jobs:
         run: terraform apply -auto-approve -input=false
 
 
-  # =========================
+  # ==================================================
   # DEPLOYMENT TEST
-  # =========================
+  # ==================================================
   deployment-test:
     name: Nginx Deployment Test
     needs: terraform-cd
@@ -179,12 +184,15 @@ jobs:
 
     steps:
 
+      # 1. Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # 3. Configure AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -192,27 +200,55 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 4. Terraform Init
       - name: Terraform Init
         run: terraform init -input=false
 
+      # 5. Get Server IPs
       - name: Get Server IPs
-        id: servers
         run: |
           terraform output -json public_ips > public_ips.json
           cat public_ips.json
 
+      # 6. Test Nginx Servers
       - name: Test Nginx Servers
+        shell: bash
         run: |
           for IP in $(cat public_ips.json | tr -d '[]" ,' | tr '\n' ' '); do
-            echo "Testing server: $IP"
 
-            if curl --fail --max-time 20 "http://$IP"; then
-              echo "Nginx test passed for $IP"
-            else
-              echo "Nginx test failed for $IP"
+            echo "======================================"
+            echo "Testing server: $IP"
+            echo "======================================"
+
+            SUCCESS=false
+
+            for i in {1..12}; do
+
+              echo "Attempt $i/12..."
+
+              if curl --fail --connect-timeout 5 --max-time 10 "http://$IP"; then
+                echo ""
+                echo "Nginx test PASSED for $IP"
+                SUCCESS=true
+                break
+              fi
+
+              echo "Server not ready. Waiting 10 seconds..."
+              sleep 10
+
+            done
+
+            if [ "$SUCCESS" = false ]; then
+              echo "Nginx test FAILED for $IP"
               exit 1
             fi
+
           done
 
+      # 7. Final Result
       - name: Deployment Test Passed
-        run: echo "All Nginx servers passed HTTP health check"
+        run: |
+          echo "======================================"
+          echo "ALL NGINX SERVERS PASSED"
+          echo "DEPLOYMENT SUCCESSFUL"
+          echo "======================================"
