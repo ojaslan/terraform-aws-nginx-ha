@@ -20,7 +20,7 @@ jobs:
 
     env:
       TF_VAR_aws_region: us-east-1
-      TF_VAR_ami_id: ami-01a00762f46d584a1
+      TF_VAR_ami_id: ami-0b6d9d3d33ba97d99
 
     steps:
 
@@ -40,32 +40,32 @@ jobs:
           CHECK_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           if [ -z "$CHECK_ACCESS_KEY" ]; then
-            echo "❌ AWS_ACCESS_KEY_ID is EMPTY"
+            echo "AWS_ACCESS_KEY_ID is EMPTY"
             exit 1
           fi
 
           if [ -z "$CHECK_SECRET_KEY" ]; then
-            echo "❌ AWS_SECRET_ACCESS_KEY is EMPTY"
+            echo "AWS_SECRET_ACCESS_KEY is EMPTY"
             exit 1
           fi
 
-          echo "✅ AWS_ACCESS_KEY_ID is present"
+          echo "AWS_ACCESS_KEY_ID is present"
           echo "Access key length: ${#CHECK_ACCESS_KEY}"
 
-          echo "✅ AWS_SECRET_ACCESS_KEY is present"
+          echo "AWS_SECRET_ACCESS_KEY is present"
           echo "Secret key length: ${#CHECK_SECRET_KEY}"
 
           if [[ "$CHECK_ACCESS_KEY" == *"/"* ]]; then
-            echo "❌ ACCESS KEY contains '/'"
+            echo "ACCESS KEY contains '/'"
             exit 1
           fi
 
           if [[ "$CHECK_ACCESS_KEY" == *" "* ]]; then
-            echo "❌ ACCESS KEY contains spaces"
+            echo "ACCESS KEY contains spaces"
             exit 1
           fi
 
-          echo "✅ Access key format looks valid"
+          echo "Access key format looks valid"
 
       # 4. Configure AWS
       - name: Configure AWS Credentials
@@ -79,7 +79,7 @@ jobs:
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
-      # 6. Terraform format check
+      # 6. Terraform Format Check
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
@@ -110,7 +110,7 @@ jobs:
 
     env:
       TF_VAR_aws_region: us-east-1
-      TF_VAR_ami_id: ami-01a00762f46d584a1
+      TF_VAR_ami_id: ami-0b6d9d3d33ba97d99
 
     steps:
 
@@ -138,6 +138,10 @@ jobs:
       - name: Terraform Init
         run: terraform init -input=false
 
-      # 6. Terraform Apply
+      # 6. Terraform Plan
+      - name: Terraform Plan
+        run: terraform plan -input=false
+
+      # 7. Terraform Apply
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
